@@ -2,6 +2,7 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from github import Github, GithubException
 import re
+import os
 
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -11,9 +12,6 @@ SKILLS_DB = [
     "machine learning","deep learning","flask","django",
     "docker","kubernetes","aws","api","javascript","mongodb"
 ]
-
-# ✅ FIX 1: Store your GitHub PAT as a string
-GITHUB_TOKEN = "token"
 
 def extract_skills(text):
     text = text.lower()
@@ -32,7 +30,7 @@ def compute_match(candidate_skills, job_skills):
 def get_github_data(username):
     # ✅ FIX 3: Specific exception handling so errors are visible
     try:
-        g = Github(GITHUB_TOKEN)  # ✅ FIX 1: Pass token as the string variable
+        g = Github(os.getenv("GITHUB_TOKEN"))  # ✅ FIX 1: Pass token from environment variable
         user = g.get_user(username)
 
         repos = list(user.get_repos())
@@ -85,10 +83,8 @@ def process_dataset(df, job_desc, github_data=None):
         if resume_github_username:
             local_github_data = get_github_data(resume_github_username)
 
-        # ✅ FIX 2: Manual GitHub overrides resume-detected one,
-        # and we track the display username correctly
-        if github_data:
-            local_github_data = github_data
+        # Do NOT override with manual GitHub here.
+        # Each candidate should only use their own GitHub (if found in resume).
 
         # Determine which GitHub username to display
         if local_github_data and local_github_data.get("username"):

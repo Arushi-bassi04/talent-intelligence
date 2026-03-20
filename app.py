@@ -15,64 +15,52 @@ if st.button("Analyze Candidates"):
     
     if job_desc.strip() == "":
         st.warning("Enter job description")
+
     else:
-        github_data = None
+        from utils import get_github_data, extract_skills, compute_match
+
+        job_skills = extract_skills(job_desc)
+
+        # 🟩 MODE 2: GitHub Evaluation
         if github_username:
-            from utils import get_github_data
             github_data = get_github_data(github_username.strip())
 
-            st.subheader("Your GitHub Analysis")
+            st.subheader("GitHub Candidate Evaluation")
 
-            # ✅ Show feedback so you know if GitHub fetch worked
             if github_data and github_data["repo_count"] > 0:
-                st.success(
-                    f"GitHub data fetched for **{github_username}**: "
-                    f"{github_data['repo_count']} repos, "
-                    f"languages: {', '.join(github_data['languages']) or 'none detected'}"
-                )
+                st.success(f"GitHub: {github_username}")
+
+                github_skills = github_data["languages"]
+
+                score = compute_match(github_skills, job_skills)
+
+                st.write("GitHub Skills:", github_skills)
+                st.write("Job Skills:", job_skills)
+                st.write(f"Match Score: {score}%")
+
+                progress_value = max(0, min(float(score)/100, 1))
+                st.progress(progress_value)
+
+                if score > 70:
+                    st.success("Strong Candidate")
+                elif score > 40:
+                    st.warning("Moderate Match")
+                else:
+                    st.error("Weak Match")
+
             else:
-                st.warning(
-                    f"⚠️ Could not fetch GitHub data for **{github_username}**. "
-                    "Check the username or token. Proceeding without GitHub data."
-                )
+                st.warning("Could not fetch GitHub data")
 
-            if github_data:
-                st.write("Languages:", github_data.get("languages", []))
-                st.write("Repositories:", github_data.get("repo_count", 0))
+        # 🟦 MODE 1: Dataset Ranking
+        else:
+            top_candidates, job_skills = process_dataset(df, job_desc)
 
-        top_candidates, job_skills = process_dataset(df, job_desc)
+            st.subheader("Top Candidates")
 
-        st.subheader("Job Skills")
-        st.write(job_skills)
-
-        st.subheader("Top Candidates")
-
-        for cand in top_candidates:
-            st.markdown(f"### Candidate {cand['id']} — {cand['score']}%")
-
-            # ✅ Show repo count alongside GitHub username
-            github_display = cand.get("github", "Not Found")
-            repo_count = cand.get("github_repos", 0)
-            if github_display != "Not Found":
-                st.write(f"🔗 GitHub: [{github_display}](https://github.com/{github_display}) — {repo_count} repos")
-            else:
-                st.write("🔗 GitHub: Not Found")
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-                st.write("Matched Skills")
-                st.write(cand["matched"])
-
-            with col2:
-                st.write("Missing Skills")
-                st.write(cand["missing"])
-
-            st.write("Reasoning")
-            st.write(
-                f"Matched {len(cand['matched'])} skills "
-                f"and missing {len(cand['missing'])} skills."
-            )
+            for cand in top_candidates:
+                st.markdown(f"### Candidate {cand['id']} — {cand['score']}%")
+                st.write("Matched:", cand["matched"])
+                st.write("Missing:", cand["missing"])
 
             score = cand.get('score', 0)
             if score is None:
