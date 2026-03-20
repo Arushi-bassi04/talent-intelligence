@@ -30,7 +30,7 @@ def compute_match(candidate_skills, job_skills):
 def get_github_data(username):
     # ✅ FIX 3: Specific exception handling so errors are visible
     try:
-        g = Github(os.getenv("GITHUB_TOKEN"))  # ✅ FIX 1: Pass token from environment variable
+        g = Github()
         user = g.get_user(username)
 
         repos = list(user.get_repos())
