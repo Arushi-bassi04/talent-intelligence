@@ -36,7 +36,7 @@ This repository represents my contribution to a team-based hackathon project. My
 ## Hackathon Details
 
 * Event: IIT Kanpur × Eightfold AI Hackathon
-* Type: Team Nova
+* Type: Team Project
 
 ---
 
